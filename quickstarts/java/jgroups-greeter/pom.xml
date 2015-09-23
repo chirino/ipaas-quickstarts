@@ -38,6 +38,7 @@
     <!-- versions for use in mvn plugins as we cannot inherit them from a BOM -->
     <fabric8.version>2.2.35</fabric8.version>
     <docker.maven.plugin.version>0.13.3</docker.maven.plugin.version>
+    <hawt-app.version>1.2</hawt-app.version>
 
     <docker.from>docker.io/fabric8/java</docker.from>
 
@@ -154,6 +155,25 @@
         </executions>
       </plugin>
 
+
+      <plugin>
+        <groupId>org.jboss.hawt.app</groupId>
+        <artifactId>hawt-app-maven-plugin</artifactId>
+        <version>${hawt-app.version}</version>
+        <configuration>
+          <main>${docker.env.MAIN}</main>
+        </configuration>
+        <executions>
+          <execution>
+            <id>build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>      
+
       <plugin>
         <groupId>org.jolokia</groupId>
         <artifactId>docker-maven-plugin</artifactId>
@@ -165,10 +185,25 @@
               <build>
                 <from>${docker.from}</from>
                 <assembly>
-                  <descriptorRef>${docker.assemblyDescriptorRef}</descriptorRef>
+                  <inline>
+                    <fileSets>
+                      <fileSet>
+                        <directory>${basedir}/target/hawt-app</directory>
+                        <outputDirectory>.</outputDirectory>
+                      </fileSet>
+                    </fileSets>
+                  </inline>
+                  <basedir>/opt/${project.artifactId}-${project.version}</basedir>
+                  <!--
+                  <user>jboss:jboss:jboss</user>
+                  -->
                 </assembly>
+                <cmd>
+                  <exec>
+                    <args>/opt/${project.artifactId}-${project.version}/bin/run</args>
+                  </exec>
+                </cmd>
                 <env>
-                  <MAIN>${docker.env.MAIN}</MAIN>
                   <JGROUPS_PORT>${docker.port.container.jgroups}</JGROUPS_PORT>
                   <JAVA_OPTIONS>${docker.env.JAVA_OPTIONS}</JAVA_OPTIONS>
                 </env>
@@ -186,7 +221,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>${exec-maven-plugin.version}</version>
         <configuration>
-          <mainClass>io.fabric8.quickstarts.jgroups.greeter.Main</mainClass>
+          <mainClass>${docker.env.MAIN}</mainClass>
           <includePluginDependencies>false</includePluginDependencies>
           <arguments>
             <argument>-Djava.net.preferIPv4Stack=true</argument>

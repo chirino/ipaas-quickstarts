@@ -38,6 +38,7 @@
 
     <!-- the version of the BOM, defining all the dependency versions -->
     <fabric8.version>2.2.35</fabric8.version>
+    <hawt-app.version>1.2</hawt-app.version>
 
     <!-- maven plugin versions -->
     <camel.version>2.15.3</camel.version>
@@ -179,6 +180,24 @@
       </plugin>
 
       <plugin>
+        <groupId>org.jboss.hawt.app</groupId>
+        <artifactId>hawt-app-maven-plugin</artifactId>
+        <version>${hawt-app.version}</version>
+        <configuration>
+          <main>${docker.env.MAIN}</main>
+        </configuration>
+        <executions>
+          <execution>
+            <id>build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>      
+
+      <plugin>
         <groupId>org.jolokia</groupId>
         <artifactId>docker-maven-plugin</artifactId>
         <version>${docker.maven.plugin.version}</version>
@@ -189,11 +208,24 @@
               <build>
                 <from>${docker.from}</from>
                 <assembly>
-                  <descriptorRef>${docker.assemblyDescriptorRef}</descriptorRef>
+                  <inline>
+                    <fileSets>
+                      <fileSet>
+                        <directory>${basedir}/target/hawt-app</directory>
+                        <outputDirectory>.</outputDirectory>
+                      </fileSet>
+                    </fileSets>
+                  </inline>
+                  <basedir>/opt/${project.artifactId}-${project.version}</basedir>
+                  <!--
+                  <user>jboss:jboss:jboss</user>
+                  -->
                 </assembly>
-                <env>
-                  <MAIN>${docker.env.MAIN}</MAIN>
-                </env>
+                <cmd>
+                  <exec>
+                    <args>/opt/${project.artifactId}-${project.version}/bin/run</args>
+                  </exec>
+                 </cmd>
               </build>
             </image>
           </images>

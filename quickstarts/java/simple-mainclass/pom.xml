@@ -44,6 +44,7 @@
     <!-- versions for use in mvn plugins as we cannot inherit them from a BOM -->
     <fabric8.version>2.2.35</fabric8.version>
     <docker.maven.plugin.version>0.13.3</docker.maven.plugin.version>
+    <hawt-app.version>1.2</hawt-app.version>
 
     <docker.from>docker.io/fabric8/java</docker.from>
 
@@ -123,6 +124,24 @@
       </plugin>
 
       <plugin>
+        <groupId>org.jboss.hawt.app</groupId>
+        <artifactId>hawt-app-maven-plugin</artifactId>
+        <version>${hawt-app.version}</version>
+        <configuration>
+          <main>${docker.env.MAIN}</main>
+        </configuration>
+        <executions>
+          <execution>
+            <id>build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.jolokia</groupId>
         <artifactId>docker-maven-plugin</artifactId>
         <version>${docker.maven.plugin.version}</version>
@@ -133,16 +152,30 @@
               <build>
                 <from>${docker.from}</from>
                 <assembly>
-                  <descriptorRef>${docker.assemblyDescriptorRef}</descriptorRef>
+                  <inline>
+                    <fileSets>
+                      <fileSet>
+                        <directory>${basedir}/target/hawt-app</directory>
+                        <outputDirectory>.</outputDirectory>
+                      </fileSet>
+                    </fileSets>
+                  </inline>
+                  <basedir>/opt/${project.artifactId}-${project.version}</basedir>
+                  <!--
+                  <user>jboss:jboss:jboss</user>
+                  -->
                 </assembly>
-                <env>
-                  <MAIN>${docker.env.MAIN}</MAIN>
-                </env>
+                <cmd>
+                  <exec>
+                    <args>/opt/${project.artifactId}-${project.version}/bin/run</args>
+                  </exec>
+                 </cmd>
               </build>
             </image>
           </images>
         </configuration>
       </plugin>
+
     </plugins>
   </build>
 
